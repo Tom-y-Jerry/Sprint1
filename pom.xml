@@ -7,6 +7,12 @@
     <groupId>es.ulpgc.dacd</groupId>
     <artifactId>PROYECTO_DACD</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <modules>
+        <module>BlaBlaCarFeeder</module>
+        <module>ticketmaster-feeder</module>
+        <module>blablacar-feeder</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
