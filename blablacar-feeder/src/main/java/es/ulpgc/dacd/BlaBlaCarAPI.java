@@ -12,36 +12,22 @@ public class BlaBlaCarAPI {
 
     public static void getStops() {
         try {
-            URL url = new URL(BASE_URL);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
+            HttpURLConnection conn = (HttpURLConnection) new URL(BASE_URL).openConnection();
             conn.setRequestMethod("GET");
-            conn.setRequestProperty("Authorization", "Token " + API_KEY); // Autenticación correcta
-            conn.setRequestProperty("Accept-Encoding", "gzip"); // Pedimos respuesta comprimida
+            conn.setRequestProperty("Authorization", "Token " + API_KEY);
+            conn.setRequestProperty("Accept-Encoding", "gzip");
             conn.setRequestProperty("Accept", "application/json");
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 200) { // HTTP OK
-                // Comprobamos si la respuesta está comprimida
-                String encoding = conn.getContentEncoding();
-                BufferedReader in;
-
-                if ("gzip".equalsIgnoreCase(encoding)) {
-                    in = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
-                } else {
-                    in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                }
-
-                String inputLine;
-                StringBuilder response = new StringBuilder();
-
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
+            if (conn.getResponseCode() == 200) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                        "gzip".equalsIgnoreCase(conn.getContentEncoding()) ?
+                                new GZIPInputStream(conn.getInputStream()) :
+                                conn.getInputStream()));
+                String response = in.lines().reduce("", (a, b) -> a + b);
                 in.close();
-                System.out.println("Respuesta BlaBlaCar: " + response.toString());
+                System.out.println("Respuesta BlaBlaCar: " + response);
             } else {
-                System.err.println("Error en la solicitud: " + responseCode);
+                System.err.println("Error en la solicitud: " + conn.getResponseCode());
             }
         } catch (Exception e) {
             System.err.println("Error al conectar con BlaBlaCar: " + e.getMessage());

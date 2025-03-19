@@ -37,6 +37,10 @@ public class TicketmasterAPI {
         }
     }
 
+    public static void getEventsAndSave(String city) {
+        getEventsAndSave(city);
+    }
+
     public static void main(String[] args) {
         getEvents("Madrid");
     }

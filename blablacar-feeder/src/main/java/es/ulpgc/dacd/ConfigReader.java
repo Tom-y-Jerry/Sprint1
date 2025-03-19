@@ -1,9 +1,19 @@
 package es.ulpgc.dacd;
 
+import java.io.InputStream;
+import java.util.Properties;
+
 public class ConfigReader {
-    public static String getApiKey(String blablacarApiKey) {
-        // Puedes devolver el mismo valor o leerlo de una configuración
-        return blablacarApiKey;
+    private static final Properties properties = new Properties();
+
+    static {
+        try (InputStream input = ConfigReader.class.getClassLoader().getResourceAsStream("config.properties")) {
+            properties.load(input);
+        } catch (Exception ignored) {}
+    }
+
+    public static String getApiKey(String key) {
+        return properties.getProperty(key);
     }
 }
 
