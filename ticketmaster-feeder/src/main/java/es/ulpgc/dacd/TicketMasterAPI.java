@@ -5,7 +5,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class TicketmasterAPI {
+public class TicketMasterAPI {
     private static final String API_KEY = ConfigReader.getApiKey("TICKETMASTER_API_KEY");
     private static final String BASE_URL = "https://app.ticketmaster.com/discovery/v2/events.json";
 
