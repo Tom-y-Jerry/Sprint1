@@ -21,8 +21,8 @@
     <open-files />
   </component>
   <component name="DBNavigator.Project.FileConnectionMappingManager">
-    <mapping file-url="file://$PROJECT_DIR$/ticketmaster-feeder/src/main/java/es/ulpgc/dacd" connection-id="virtual-mysql-connection" session-id="" current-schema="" />
-    <mapping file-url="file://$PROJECT_DIR$/blablacar-feeder/src/main/java/es/ulpgc/dacd" connection-id="virtual-mysql-connection" session-id="" current-schema="" />
+    <mapping file-url="file://$PROJECT_DIR$/ticketmaster-feeder/src/main/java/es/ulpgc/dacd" connection-id="virtual-mysql-connection" session-id="MAIN" current-schema="" />
+    <mapping file-url="file://$PROJECT_DIR$/blablacar-feeder/src/main/java/es/ulpgc/dacd" connection-id="virtual-mysql-connection" session-id="MAIN" current-schema="" />
   </component>
   <component name="DBNavigator.Project.Settings">
     <connections />

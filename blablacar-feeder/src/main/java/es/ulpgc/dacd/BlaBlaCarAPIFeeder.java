@@ -1,17 +1,20 @@
 package es.ulpgc.dacd;
 
-import okhttp3.*;
-import java.sql.*;
-import java.sql.Connection;
-
 import com.google.gson.*;
+import java.sql.*;
+import java.util.zip.GZIPInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class BlaBlaCarAPIFeeder {
 
-    private static final String API_URL = "https://bus-api.blablacar.com/v3/stops"; // URL real
+    private static final String API_URL = "https://bus-api.blablacar.com/v3/stops";
     private static final String DB_URL = "jdbc:mysql://localhost:3306/apis_data";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "tomyjerry2025.";
+    private static final String API_KEY = ConfigReader.getApiKey("BLABLACAR_API_KEY");
 
     public static void main(String[] args) {
         try {
@@ -24,53 +27,66 @@ public class BlaBlaCarAPIFeeder {
     }
 
     private static String fetchDataFromAPI() throws Exception {
-        OkHttpClient client = new OkHttpClient();
+        HttpURLConnection conn = (HttpURLConnection) new URL(API_URL).openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Authorization", "Token " + API_KEY);
+        conn.setRequestProperty("Accept-Encoding", "gzip");
+        conn.setRequestProperty("Accept", "application/json");
 
-        Request request = new Request.Builder()
-                .url(API_URL)
-                .addHeader("Authorization", "Bearer TU_CLAVE_DE_API") // Asegúrate de poner el token correcto
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                System.out.println("Código de respuesta: " + response.code());
-                System.out.println("Cuerpo de respuesta: " + response.body().string());
-                throw new Exception("Error en la API: " + response);
-            }
-            return response.body().string();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                "gzip".equalsIgnoreCase(conn.getContentEncoding())
+                        ? new GZIPInputStream(conn.getInputStream())
+                        : conn.getInputStream()))) {
+            return in.lines().reduce("", (a, b) -> a + b);
         }
     }
 
     private static JsonArray parseJson(String jsonData) {
         Gson gson = new Gson();
-        return gson.fromJson(jsonData, JsonArray.class);  // La API devuelve un array de estaciones
+        JsonObject jsonObject = gson.fromJson(jsonData, JsonObject.class);
+        return jsonObject.getAsJsonArray("stops");
     }
 
     private static void insertDataIntoDatabase(JsonArray stops) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "INSERT INTO estaciones (id, nombre, latitud, longitud, direccion) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement statement = conn.prepareStatement(sql);
+        String sql = "INSERT IGNORE INTO stations (id, carrier_id, short_name, long_name, time_zone, latitude, longitude, is_meta_gare, address)" +
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
+             PreparedStatement statement = conn.prepareStatement(sql)) {
 
             for (JsonElement element : stops) {
                 JsonObject stop = element.getAsJsonObject();
+
                 int id = stop.get("id").getAsInt();
-                String nombre = stop.get("short_name").getAsString();
-                double latitud = stop.get("latitude").getAsDouble();
-                double longitud = stop.get("longitude").getAsDouble();
-                String direccion = stop.get("address").getAsString();
+                String carrierId = stop.has("_carrier_id") ? stop.get("_carrier_id").getAsString() : null;
+                String shortName = stop.has("short_name") ? stop.get("short_name").getAsString() : null;
+                String longName = stop.has("long_name") ? stop.get("long_name").getAsString() : null;
+                String timeZone = stop.has("time_zone") ? stop.get("time_zone").getAsString() : null;
+                double latitude = stop.has("latitude") ? stop.get("latitude").getAsDouble() : 0.0;
+                double longitude = stop.has("longitude") ? stop.get("longitude").getAsDouble() : 0.0;
+                boolean isMetaGare = stop.has("is_meta_gare") && stop.get("is_meta_gare").getAsBoolean();
+                String address = stop.has("address") ? stop.get("address").getAsString() : null;
 
                 statement.setInt(1, id);
-                statement.setString(2, nombre);
-                statement.setDouble(3, latitud);
-                statement.setDouble(4, longitud);
-                statement.setString(5, direccion);
+                statement.setString(2, carrierId);
+                statement.setString(3, shortName);
+                statement.setString(4, longName);
+                statement.setString(5, timeZone);
+                statement.setDouble(6, latitude);
+                statement.setDouble(7, longitude);
+                statement.setBoolean(8, isMetaGare);
+                statement.setString(9, address);
 
                 statement.executeUpdate();
             }
+
             System.out.println("Datos de estaciones insertados correctamente.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 }
+
+
 
