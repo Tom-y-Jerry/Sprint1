@@ -11,9 +11,7 @@ import java.net.URL;
 public class BlaBlaCarAPIFeeder {
 
     private static final String API_URL = "https://bus-api.blablacar.com/v3/stops";
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/apis_data";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "tomyjerry2025.";
+    private static final String DB_URL = "jdbc:sqlite:data.db";
     private static final String API_KEY = ConfigReader.getApiKey("BLABLACAR_API_KEY");
 
     public static void main(String[] args) {
@@ -48,37 +46,58 @@ public class BlaBlaCarAPIFeeder {
     }
 
     private static void insertDataIntoDatabase(JsonArray stops) {
-        String sql = "INSERT IGNORE INTO stations (id, carrier_id, short_name, long_name, time_zone, latitude, longitude, is_meta_gare, address)" +
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String createTableSQL = """
+                CREATE TABLE IF NOT EXISTS stations (
+                    id INTEGER PRIMARY KEY,
+                    carrier_id TEXT,
+                    short_name TEXT,
+                    long_name TEXT,
+                    time_zone TEXT,
+                    latitude REAL,
+                    longitude REAL,
+                    is_meta_gare BOOLEAN,
+                    address TEXT
+                );
+                """;
 
+        String insertSQL = """
+                INSERT OR IGNORE INTO stations (id, carrier_id, short_name, long_name, time_zone, latitude, longitude, is_meta_gare, address)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """;
 
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
-             PreparedStatement statement = conn.prepareStatement(sql)) {
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            // Crear tabla si no existe
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(createTableSQL);
+            }
 
-            for (JsonElement element : stops) {
-                JsonObject stop = element.getAsJsonObject();
+            // Insertar datos
+            try (PreparedStatement statement = conn.prepareStatement(insertSQL)) {
+                for (JsonElement element : stops) {
+                    JsonObject stop = element.getAsJsonObject();
 
-                int id = stop.get("id").getAsInt();
-                String carrierId = stop.has("_carrier_id") ? stop.get("_carrier_id").getAsString() : null;
-                String shortName = stop.has("short_name") ? stop.get("short_name").getAsString() : null;
-                String longName = stop.has("long_name") ? stop.get("long_name").getAsString() : null;
-                String timeZone = stop.has("time_zone") ? stop.get("time_zone").getAsString() : null;
-                double latitude = stop.has("latitude") ? stop.get("latitude").getAsDouble() : 0.0;
-                double longitude = stop.has("longitude") ? stop.get("longitude").getAsDouble() : 0.0;
-                boolean isMetaGare = stop.has("is_meta_gare") && stop.get("is_meta_gare").getAsBoolean();
-                String address = stop.has("address") ? stop.get("address").getAsString() : null;
+                    int id = stop.get("id").getAsInt();
+                    String carrierId = stop.has("_carrier_id") ? stop.get("_carrier_id").getAsString() : null;
+                    String shortName = stop.has("short_name") ? stop.get("short_name").getAsString() : null;
+                    String longName = stop.has("long_name") ? stop.get("long_name").getAsString() : null;
+                    String timeZone = stop.has("time_zone") ? stop.get("time_zone").getAsString() : null;
+                    double latitude = stop.has("latitude") ? stop.get("latitude").getAsDouble() : 0.0;
+                    double longitude = stop.has("longitude") ? stop.get("longitude").getAsDouble() : 0.0;
+                    boolean isMetaGare = stop.has("is_meta_gare") && stop.get("is_meta_gare").getAsBoolean();
+                    String address = stop.has("address") ? stop.get("address").getAsString() : null;
 
-                statement.setInt(1, id);
-                statement.setString(2, carrierId);
-                statement.setString(3, shortName);
-                statement.setString(4, longName);
-                statement.setString(5, timeZone);
-                statement.setDouble(6, latitude);
-                statement.setDouble(7, longitude);
-                statement.setBoolean(8, isMetaGare);
-                statement.setString(9, address);
+                    statement.setInt(1, id);
+                    statement.setString(2, carrierId);
+                    statement.setString(3, shortName);
+                    statement.setString(4, longName);
+                    statement.setString(5, timeZone);
+                    statement.setDouble(6, latitude);
+                    statement.setDouble(7, longitude);
+                    statement.setBoolean(8, isMetaGare);
+                    statement.setString(9, address);
 
-                statement.executeUpdate();
+                    statement.executeUpdate();
+                }
             }
 
             System.out.println("Datos de estaciones insertados correctamente.");
@@ -87,6 +106,5 @@ public class BlaBlaCarAPIFeeder {
         }
     }
 }
-
 
 
