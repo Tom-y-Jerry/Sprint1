@@ -1,4 +1,5 @@
 package es.ulpgc.dacd;
+
 import com.google.gson.*;
 import okhttp3.*;
 import java.sql.*;
@@ -6,10 +7,9 @@ import java.sql.Connection;
 
 public class TicketMasterAPIFeeder {
 
-    private static final String API_URL = "https://app.ticketmaster.com/discovery/v2/events.json?apikey="; // Cambiar por la URL real
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/apis_data";
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "tomyjerry2025.";
+    private static final String API_KEY = ConfigReader.getApiKey("TICKETMASTER_API_KEY");
+    private static final String API_URL = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + API_KEY + "&city=Madrid";
+    private static final String DB_URL = "jdbc:sqlite:data.db";
 
     public static void main(String[] args) {
         try {
@@ -34,33 +34,63 @@ public class TicketMasterAPIFeeder {
     private static JsonArray parseJson(String jsonData) {
         Gson gson = new Gson();
         JsonObject jsonObject = gson.fromJson(jsonData, JsonObject.class);
-        return jsonObject.getAsJsonArray("events");  // Ajustar clave según API
+        JsonObject embedded = jsonObject.getAsJsonObject("_embedded");
+
+        JsonArray events = new JsonArray();
+        JsonElement eventsElement = embedded.get("events");
+
+        if (eventsElement.isJsonArray()) {
+            events = eventsElement.getAsJsonArray();
+        } else if (eventsElement.isJsonObject()) {
+            events.add(eventsElement.getAsJsonObject());
+        }
+
+        return events;
     }
 
     private static void insertDataIntoDatabase(JsonArray events) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD)) {
-            String sql = "INSERT INTO eventos (id, nombre, fecha, ciudad) VALUES (?, ?, ?, ?)";
-            PreparedStatement statement = conn.prepareStatement(sql);
+        String createTableSQL = """
+                CREATE TABLE IF NOT EXISTS eventos (
+                    id TEXT PRIMARY KEY,
+                    nombre TEXT,
+                    fecha TEXT,
+                    ciudad TEXT
+                );
+                """;
 
-            for (JsonElement element : events) {
-                JsonObject event = element.getAsJsonObject();
-                String id = event.get("id").getAsString();
-                String nombre = event.get("name").getAsString();
-                String fecha = event.get("dates").getAsJsonObject().get("start").get("localDate").getAsString();
-                String ciudad = event.get("venues").getAsJsonArray().get(0).getAsJsonObject().get("city").get("name").getAsString();
+        String insertSQL = """
+                INSERT OR IGNORE INTO eventos (id, nombre, fecha, ciudad)
+                VALUES (?, ?, ?, ?);
+                """;
 
-                statement.setString(1, id);
-                statement.setString(2, nombre);
-                statement.setString(3, fecha);
-                statement.setString(4, ciudad);
-
-                statement.executeUpdate();
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(createTableSQL);
             }
-            System.out.println("Datos de Ticketmaster insertados correctamente.");
+
+            try (PreparedStatement statement = conn.prepareStatement(insertSQL)) {
+                for (JsonElement element : events) {
+                    JsonObject event = element.getAsJsonObject();
+
+                    String id = event.get("id").getAsString();
+                    String nombre = event.get("name").getAsString();
+                    String fecha = event.getAsJsonObject("dates").getAsJsonObject("start").get("localDate").getAsString();
+                    String ciudad = event.getAsJsonObject("_embedded")
+                            .getAsJsonArray("venues").get(0).getAsJsonObject()
+                            .getAsJsonObject("city").get("name").getAsString();
+
+                    statement.setString(1, id);
+                    statement.setString(2, nombre);
+                    statement.setString(3, fecha);
+                    statement.setString(4, ciudad);
+
+                    statement.executeUpdate();
+                }
+            }
+
+            System.out.println("Datos de eventos insertados correctamente en SQLite.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
-
 }
