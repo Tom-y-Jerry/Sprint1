@@ -2,6 +2,7 @@ package es.ulpgc.dacd;
 
 import com.google.gson.*;
 import java.sql.*;
+import java.util.concurrent.*;
 import java.util.zip.GZIPInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,13 +16,19 @@ public class BlaBlaCarAPIFeeder {
     private static final String API_KEY = ConfigReader.getApiKey("BLABLACAR_API_KEY");
 
     public static void main(String[] args) {
-        try {
-            String jsonData = fetchDataFromAPI();
-            JsonArray stops = parseJson(jsonData);
-            insertDataIntoDatabase(stops);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        Runnable task = () -> {
+            try {
+                String jsonData = fetchDataFromAPI();
+                JsonArray stops = parseJson(jsonData);
+                insertDataIntoDatabase(stops);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+
+        // Ejecutar cada hora (inicialmente ahora)
+        scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.HOURS);
     }
 
     private static String fetchDataFromAPI() throws Exception {
@@ -66,12 +73,10 @@ public class BlaBlaCarAPIFeeder {
                 """;
 
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
-            // Crear tabla si no existe
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute(createTableSQL);
             }
 
-            // Insertar datos
             try (PreparedStatement statement = conn.prepareStatement(insertSQL)) {
                 for (JsonElement element : stops) {
                     JsonObject stop = element.getAsJsonObject();
@@ -106,5 +111,6 @@ public class BlaBlaCarAPIFeeder {
         }
     }
 }
+
 
 

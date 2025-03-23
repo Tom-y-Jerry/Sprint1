@@ -4,6 +4,7 @@ import com.google.gson.*;
 import okhttp3.*;
 import java.sql.*;
 import java.sql.Connection;
+import java.util.concurrent.*;
 
 public class TicketMasterAPIFeeder {
 
@@ -12,13 +13,19 @@ public class TicketMasterAPIFeeder {
     private static final String DB_URL = "jdbc:sqlite:data.db";
 
     public static void main(String[] args) {
-        try {
-            String jsonData = fetchDataFromAPI();
-            JsonArray events = parseJson(jsonData);
-            insertDataIntoDatabase(events);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        Runnable task = () -> {
+            try {
+                String jsonData = fetchDataFromAPI();
+                JsonArray events = parseJson(jsonData);
+                insertDataIntoDatabase(events);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+
+        // Ejecutar una vez al día (inicialmente ahora)
+        scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.DAYS);
     }
 
     private static String fetchDataFromAPI() throws Exception {
@@ -94,3 +101,4 @@ public class TicketMasterAPIFeeder {
         }
     }
 }
+
