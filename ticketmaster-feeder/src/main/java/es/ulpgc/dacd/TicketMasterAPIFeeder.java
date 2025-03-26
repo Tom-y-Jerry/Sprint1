@@ -1,9 +1,11 @@
 package es.ulpgc.dacd;
 
 import com.google.gson.*;
-import okhttp3.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import java.sql.*;
-import java.sql.Connection;
+import java.util.concurrent.*;
 
 public class TicketMasterAPIFeeder {
 
@@ -12,13 +14,17 @@ public class TicketMasterAPIFeeder {
     private static final String DB_URL = "jdbc:sqlite:data.db";
 
     public static void main(String[] args) {
-        try {
-            String jsonData = fetchDataFromAPI();
-            JsonArray events = parseJson(jsonData);
-            insertDataIntoDatabase(events);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        Runnable task = () -> {
+            try {
+                String jsonData = fetchDataFromAPI();
+                JsonArray events = parseJson(jsonData);
+                insertDataIntoDatabase(events);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.DAYS);
     }
 
     private static String fetchDataFromAPI() throws Exception {
@@ -88,7 +94,7 @@ public class TicketMasterAPIFeeder {
                 }
             }
 
-            System.out.println("Datos de eventos insertados correctamente en SQLite.");
+            System.out.println("Datos de eventos insertados correctamente.");
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -1,13 +1,11 @@
 package es.ulpgc.dacd;
 
 import com.google.gson.*;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import java.sql.*;
 import java.util.concurrent.*;
-import java.util.zip.GZIPInputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 public class BlaBlaCarAPIFeeder {
 
@@ -30,19 +28,19 @@ public class BlaBlaCarAPIFeeder {
     }
 
     private static String fetchDataFromAPI() throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(API_URL).openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Authorization", "Token " + API_KEY);
-        conn.setRequestProperty("Accept-Encoding", "gzip");
-        conn.setRequestProperty("Accept", "application/json");
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(API_URL)
+                .addHeader("Authorization", "Token " + API_KEY)
+                .addHeader("Accept", "application/json")
+                .build();
 
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(
-                "gzip".equalsIgnoreCase(conn.getContentEncoding())
-                        ? new GZIPInputStream(conn.getInputStream())
-                        : conn.getInputStream()))) {
-            return in.lines().reduce("", (a, b) -> a + b);
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new Exception("Error en la API: " + response);
+            return response.body().string();
         }
     }
+
 
     private static JsonArray parseJson(String jsonData) {
         Gson gson = new Gson();
@@ -103,12 +101,9 @@ public class BlaBlaCarAPIFeeder {
                 }
             }
 
-                System.out.println("Datos de estaciones insertados correctamente.");
+            System.out.println("Datos de estaciones insertados correctamente.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 }
-
-
-
