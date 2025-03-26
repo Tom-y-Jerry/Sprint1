@@ -26,8 +26,6 @@ public class BlaBlaCarAPIFeeder {
                 e.printStackTrace();
             }
         };
-
-        // Ejecutar cada hora (inicialmente ahora)
         scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.HOURS);
     }
 
@@ -105,7 +103,7 @@ public class BlaBlaCarAPIFeeder {
                 }
             }
 
-            System.out.println("Datos de estaciones insertados correctamente.");
+                System.out.println("Datos de estaciones insertados correctamente.");
         } catch (SQLException e) {
             e.printStackTrace();
         }

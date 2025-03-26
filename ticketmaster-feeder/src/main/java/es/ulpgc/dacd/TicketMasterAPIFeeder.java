@@ -4,28 +4,21 @@ import com.google.gson.*;
 import okhttp3.*;
 import java.sql.*;
 import java.sql.Connection;
-import java.util.concurrent.*;
 
 public class TicketMasterAPIFeeder {
 
     private static final String API_KEY = ConfigReader.getApiKey("TICKETMASTER_API_KEY");
-    private static final String API_URL = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + API_KEY + "&city=Madrid";
+    private static final String API_URL = "https://app.ticketmaster.com/discovery/v2/events.json?apikey=" + API_KEY + "&countryCode=ES";
     private static final String DB_URL = "jdbc:sqlite:data.db";
 
     public static void main(String[] args) {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        Runnable task = () -> {
-            try {
-                String jsonData = fetchDataFromAPI();
-                JsonArray events = parseJson(jsonData);
-                insertDataIntoDatabase(events);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        };
-
-        // Ejecutar una vez al día (inicialmente ahora)
-        scheduler.scheduleAtFixedRate(task, 0, 1, TimeUnit.DAYS);
+        try {
+            String jsonData = fetchDataFromAPI();
+            JsonArray events = parseJson(jsonData);
+            insertDataIntoDatabase(events);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static String fetchDataFromAPI() throws Exception {
@@ -101,4 +94,3 @@ public class TicketMasterAPIFeeder {
         }
     }
 }
-
