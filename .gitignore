@@ -36,5 +36,3 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/blablacar-feeder/src/main/resources/
-/ticketmaster-feeder/src/main/resources/
