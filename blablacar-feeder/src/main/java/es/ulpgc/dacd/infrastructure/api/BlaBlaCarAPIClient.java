@@ -10,7 +10,8 @@ public class BlaBlaCarAPIClient {
     private final OkHttpClient client = new OkHttpClient();
 
     public BlaBlaCarAPIClient(String apiKey) {
-        this.apiKey = apiKey;
+        // Ruta externa al archivo que contiene la API key
+        this.apiKey = ApiKeyLoader.loadApiKey("C:\\Users\\lucia\\OneDrive - Universidad de Las Palmas de Gran Canaria\\segundo\\apikeyblablacar.txt");
     }
 
     public String fetchStopsJson() throws Exception {
