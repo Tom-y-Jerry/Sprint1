@@ -4,7 +4,7 @@ import es.ulpgc.dacd.domain.port.Stations;
 import es.ulpgc.dacd.domain.port.StationsRepository;
 import es.ulpgc.dacd.infrastructure.api.BlaBlaCarAPIClient;
 import es.ulpgc.dacd.infrastructure.api.BlaBlaCarStations;
-import es.ulpgc.dacd.infrastructure.persistence.SQLiteStationsRepository;
+import es.ulpgc.dacd.infrastructure.adapter.SQLiteStationsRepository;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

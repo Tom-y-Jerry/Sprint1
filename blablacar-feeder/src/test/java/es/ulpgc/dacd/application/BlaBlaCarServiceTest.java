@@ -2,7 +2,7 @@ package es.ulpgc.dacd.application;
 
 import es.ulpgc.dacd.domain.model.Station;
 import es.ulpgc.dacd.domain.port.StationsRepository;
-import es.ulpgc.dacd.infrastructure.persistence.SQLiteStationsRepository;
+import es.ulpgc.dacd.infrastructure.adapter.SQLiteStationsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,4 +1,4 @@
-package es.ulpgc.dacd.infrastructure.persistence;
+package es.ulpgc.dacd.infrastructure.adapter;
 
 import es.ulpgc.dacd.domain.model.Station;
 import es.ulpgc.dacd.domain.port.StationsRepository;
